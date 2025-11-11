@@ -1,6 +1,6 @@
-## AI Agent Architecture — Day 1 Notes
+# AI Agent Architecture — Day 1 Notes
 
-# 🌍 1. The Big Picture: From Prompts to Autonomous Agents
+### 🌍 1. The Big Picture: From Prompts to Autonomous Agents
 
 Traditional AI systems (like ChatGPT-style LLMs) are reactive — they respond to user prompts but don’t take initiative.
 AI agents, in contrast, are autonomous systems that can:
@@ -15,14 +15,14 @@ Think of the evolution as:
 | **LLMs (Chatbots)** | Answer based on training data and user prompt | “What’s the capital of Japan?”                                    |
 | **AI Agents**       | Use reasoning + tools to achieve goals        | “Book a trip to Tokyo and find best hotel near conference venue.” |
 
-# 🧩 2. Core Architecture: The “Brain, Hands, and Conductor”
+### 🧩 2. Core Architecture: The “Brain, Hands, and Conductor”
 
 AI agents consist of three major components — similar to how humans think and act:
 | Component                  | Role                                                                                 | Analogy       |
 | -------------------------- | ------------------------------------------------------------------------------------ | ------------- |
-| 🧠 **Model**               | The reasoning engine (e.g., GPT, Gemini, Claude). It plans, decides, and interprets. | The brain     |
-| 🛠️ **Tools**              | APIs, code functions, or data connectors that execute actions or fetch data.         | The hands     |
-| 🎼 **Orchestration Layer** | Manages planning, memory, and the operational loop (think → act → observe).          | The conductor |
+|  **Model**               | The reasoning engine (e.g., GPT, Gemini, Claude). It plans, decides, and interprets. | The brain     |
+| **Tools**              | APIs, code functions, or data connectors that execute actions or fetch data.         | The hands     |
+| **Orchestration Layer** | Manages planning, memory, and the operational loop (think → act → observe).          | The conductor |
 
 🔄 How the Operational Loop Works
 
@@ -34,7 +34,7 @@ AI agents consist of three major components — similar to how humans think and 
 
 This loop continues until the goal is met — similar to how humans handle tasks step by step.
 
-# 🚀 3. Levels of Agent Capability (0 → 4)
+### 3. Levels of Agent Capability (0 → 4)
 Agents evolve in complexity across five levels:
 
 | Level | Name                      | Description                                            | Example                                                |
@@ -47,22 +47,22 @@ Agents evolve in complexity across five levels:
 💡 Example:
 A Level 4 system like Alphavolve can design, test, and optimize new algorithms — learning as it goes
 
-# 🧠 4. Model, Tools, and Function Calling
-🧩 Model Selection
+### 4. Model, Tools, and Function Calling
+Model Selection
 
 - Bigger isn’t always better — choose for reliability, reasoning, and cost-effectiveness.
 - Use model routing: large model for reasoning, smaller for summarization.
 
-⚙️ Tool Types
+Tool Types
 - Retrieval tools: Get data from structured (SQL) or unstructured (RAG/vector DB) sources.
 - Action tools: Perform operations (API calls, run Python, etc.).
 
-🗂️ Function Calling
+Function Calling
 - Agents use structured function calls (like {"function": "get_weather", "params": {"city": "Tokyo"}}).
 - Clear API schemas (e.g., OpenAPI specs) ensure the model knows what’s valid to call.
 This structured approach makes agents more predictable and less “hallucination-prone.”
 
-# 🧭 5. Orchestration & Memory
+### 5. Orchestration & Memory
 
 The orchestration layer is the central control system:
 - Defines agent persona and rules (like “Never disclose internal data”).
@@ -71,7 +71,7 @@ The orchestration layer is the central control system:
 - Example:
   - Memory lets an AI support agent “remember” your preferences or previous issues.
 
-# 🔍 6. Testing, Debugging, and Human Feedback
+### 🔍 6. Testing, Debugging, and Human Feedback
 
 Because AI agents are non-deterministic (many valid answers possible), we need new testing methods.
 
@@ -87,7 +87,7 @@ Because AI agents are non-deterministic (many valid answers possible), we need n
 - Turn real-world failures into new test cases.
 - This “feedback vaccination” improves robustness over time.
 
-# 🛡️ 7. Security, Scaling, and Governance
+### 🛡️ 7. Security, Scaling, and Governance
 🔒 Security
 - Agents with tool access can be risky (e.g., API misuse).
 - Defenses include:
@@ -102,7 +102,7 @@ Because AI agents are non-deterministic (many valid answers possible), we need n
 ⚖️ Governance
 - Ensures agents comply with laws, ethics, and enterprise policies.
 
-# 🧬 8. Continuous Learning & Simulation
+### 🧬 8. Continuous Learning & Simulation
 
 Agents improve over time through:
 - Logs & traces (runtime learning).
@@ -112,14 +112,14 @@ Agents improve over time through:
 🧪 Agent Gym:
 - A simulated sandbox where agents can practice, collaborate, and learn safely before being deployed to production.
 
-# 9. Real-World Examples
+### 9. Real-World Examples
 
 | System           | Level | Description                                                                                        |
 | ---------------- | ----- | -------------------------------------------------------------------------------------------------- |
 | **Co-Scientist** | 3–4   | Multi-agent research assistant — collaborates on hypotheses, data analysis, and experiment design. |
 | **Alphavolve**   | 4     | Self-evolving system that creates and optimizes new algorithms.                                    |
 
-# 🧩 10. Final Takeaways
+### 🧩 10. Final Takeaways
 
 - AI Agents are goal-driven, not just prompt-driven.
 - The architecture triad — model, tools, and orchestration — is the key.

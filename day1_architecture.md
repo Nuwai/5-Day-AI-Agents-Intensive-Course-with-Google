@@ -44,6 +44,7 @@ Agents evolve in complexity across five levels:
 | **2** | Strategic Problem Solver  | Multi-step planning, context chaining, and reasoning.  | Trip planner using multiple tools                      |
 | **3** | Collaborative Multi-Agent | Multiple agents coordinate; delegation between agents. | Team of specialized bots (planner, researcher, coder)  |
 | **4** | Self-Evolving System      | Agents create new tools or agents autonomously.        | Research assistant that builds its own sentiment model |
+
 💡 Example:
 A Level 4 system like Alphavolve can design, test, and optimize new algorithms — learning as it goes
 
@@ -102,14 +103,14 @@ Because AI agents are non-deterministic (many valid answers possible), we need n
 ⚖️ Governance
 - Ensures agents comply with laws, ethics, and enterprise policies.
 
-### 🧬 8. Continuous Learning & Simulation
+### 8. Continuous Learning & Simulation
 
 Agents improve over time through:
 - Logs & traces (runtime learning).
 - User feedback.
 - External changes (new rules, updated data).
 
-🧪 Agent Gym:
+Agent Gym:
 - A simulated sandbox where agents can practice, collaborate, and learn safely before being deployed to production.
 
 ### 9. Real-World Examples
@@ -119,7 +120,7 @@ Agents improve over time through:
 | **Co-Scientist** | 3–4   | Multi-agent research assistant — collaborates on hypotheses, data analysis, and experiment design. |
 | **Alphavolve**   | 4     | Self-evolving system that creates and optimizes new algorithms.                                    |
 
-### 🧩 10. Final Takeaways
+### 10. Final Takeaways
 
 - AI Agents are goal-driven, not just prompt-driven.
 - The architecture triad — model, tools, and orchestration — is the key.

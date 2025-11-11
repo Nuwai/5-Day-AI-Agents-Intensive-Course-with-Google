@@ -158,12 +158,12 @@ MCP paves the way for:
 ### 9. Key Takeaways
 | Concept            | Summary                                                     |
 | ------------------ | ----------------------------------------------------------- |
-| 🧠 **Agentic AI**  | Makes LLMs capable of acting via tools.                     |
-| 🛠 **Tools**       | Bridges between reasoning (model) and real-world action.    |
-| 🔌 **MCP**         | The open protocol standard for connecting agents and tools. |
-| ⚙️ **Tool Design** | Clarity, abstraction, concise outputs, instructive errors.  |
-| 📈 **Scalability** | Solved via tool retrieval (selective loading).              |
-| 🔒 **Security**    | Requires external governance to prevent misuse.             |
+| **Agentic AI**  | Makes LLMs capable of acting via tools.                     |
+| **Tools**       | Bridges between reasoning (model) and real-world action.    |
+| **MCP**         | The open protocol standard for connecting agents and tools. |
+| **Tool Design** | Clarity, abstraction, concise outputs, instructive errors.  |
+| **Scalability** | Solved via tool retrieval (selective loading).              |
+| **Security**    | Requires external governance to prevent misuse.             |
 
 ### 💬 My Insights
 

@@ -203,36 +203,30 @@ In the Google Agent Development Kit (ADK), any Python function can become a tool
 ### 3.  Architecture Overview: Currency Conversion Agent
 The diagram below shows how the Enhanced Currency Agent delegates tasks and executes code reliably:
 
-```mermaid
-flowchart TD
-    %% Agents
-    A[👩‍💻 User Request] -->|Prompt: "Convert 1250 USD to INR using Bank Transfer"| B[🤖 Enhanced Currency Agent]
-    
-    %% Tools
-    B -->|Tool Call 1| C[💳 get_fee_for_payment_method()]
-    C -->|Returns: {"fee_percentage": 0.01}| B
+```
+User: "Convert 1250 USD to INR using Bank Transfer"
+        │
+        ▼
+[🤖 Enhanced Currency Agent]
+    │
+    ├─> Calls 💳 get_fee_for_payment_method()
+    │       └─ Returns: {"fee_percentage": 0.01}
+    │
+    ├─> Calls 💱 get_exchange_rate()
+    │       └─ Returns: {"rate": 83.58}
+    │
+    ├─> Delegates to 🧮 Calculation Agent
+    │       ├─ Generates Python code
+    │       └─ Sends code to ⚙️ BuiltInCodeExecutor (Sandbox)
+    │
+    ├─> Receives computed result
+    │
+    └─> Formats detailed explanation and returns:
+            - Fee breakdown 💳
+            - Exchange rate 💱
+            - Final converted amount 💰
+```
 
-    B -->|Tool Call 2| D[💱 get_exchange_rate()]
-    D -->|Returns: {"rate": 83.58}| B
-
-    %% Delegation to Sub-Agent
-    B -->|Delegates Code Generation| E[🧮 Calculation Agent]
-    E -->|Generates Python code| F[⚙️ BuiltInCodeExecutor (Sandbox)]
-    F -->|Executes code & returns result| E --> B
-
-    %% Response to User
-    B -->|Formats explanation & breakdown| G[📊 Final Response to User]
-
-    %% Style
-    classDef agent fill:#dbeafe,stroke:#2563eb,stroke-width:2px,color:#1e3a8a;
-    classDef tool fill:#ecfccb,stroke:#65a30d,stroke-width:2px,color:#365314;
-    classDef system fill:#fef9c3,stroke:#ca8a04,stroke-width:2px,color:#713f12;
-    classDef output fill:#f1f5f9,stroke:#64748b,stroke-width:2px,color:#334155;
-
-    class B,E agent
-    class C,D tool
-    class F system
-    class G output
 
 
 #### Diagram Explanation
@@ -294,3 +288,231 @@ In summary:
 
 This exercise taught me how to make agents do real work — connecting reasoning with action.
 Instead of just text completion, the agent can now call Python functions, perform math, and explain the process like a real assistant.
+
+---
+
+
+### Agent Tool Patterns & Best Practices
+## Focus: Building production-grade agent workflows that can connect to real services and handle human-in-the-loop decisions.
+
+### 1. Concept Overview
+
+| Topic                            | Purpose                                                                                                                           |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| **MCP (Model Context Protocol)** | Lets your agent plug into external services (GitHub, Maps, Kaggle etc.) through a universal standard – no custom API code needed. |
+| **Long-Running Operations**      | Allow an agent to pause for human approval or long tasks, and resume with the same state later.                                   |
+
+
+### 2. MCP Integration
+
+#### What is MCP?
+
+MCP is like the USB protocol for agents — a standard way to connect models to external tools.
+Instead of writing custom REST or SDK wrappers, your agent connects to an MCP Server, which advertises the tools it supports.
+
+#### Architecture (Concept)
+```
+Agent (MCP Client)
+   │
+   ├─> Standard MCP Protocol (JSON-RPC)
+   │
+   ├─> GitHub MCP Server
+   ├─> Slack MCP Server
+   └─> Google Maps MCP Server
+```
+Each server exposes a consistent JSON-schema-based toolset, and the ADK (McpToolset) handles discovery and execution.
+
+#### Code Walkthrough — Connecting to Everything Server
+
+```
+from google.adk.tools.mcp_tool.mcp_toolset import McpToolset
+from google.adk.tools.mcp_tool.mcp_session_manager import StdioConnectionParams
+from mcp import StdioServerParameters
+
+mcp_image_server = McpToolset(
+    connection_params=StdioConnectionParams(
+        server_params=StdioServerParameters(
+            command="npx",
+            args=["-y", "@modelcontextprotocol/server-everything"],
+            tool_filter=["getTinyImage"],
+        ),
+        timeout=30,
+    )
+)
+```
+
+#### What happens under the hood
+
+- ADK runs npx @modelcontextprotocol/server-everything (a demo MCP server).
+- Establishes stdio communication with the server.
+- The server announces its tools → here, getTinyImage.
+- The agent can now call getTinyImage() as if it were a local Python function.
+
+#### Building the Image Agent
+
+```
+from google.adk.agents import LlmAgent
+from google.adk.models.google_llm import Gemini
+
+image_agent = LlmAgent(
+    name="image_agent",
+    model=Gemini(model="gemini-2.5-flash-lite", retry_options=retry_config),
+    instruction="Use the MCP Tool to generate images for user queries",
+    tools=[mcp_image_server],
+)
+```
+Result:
+Your agent just produced an image by talking to an external MCP server — no custom integration needed.
+
+Extend to Other MCP Servers:
+- Kaggle MCP → Access datasets and competitions
+- GitHub MCP → Analyze PRs/issues
+- Google Cloud MCP → Query BigQuery, manage storage
+- All follow the same McpToolset(connection_params=...) pattern.
+
+### 3. Long-Running Operations (Human-in-the-Loop)
+#### The Problem
+
+Most tools return immediately, but real-world operations often need time or human approval.
+Example: “Ship 10 containers to Rotterdam — are you sure?”
+We need a way to:
+1. Pause the agent’s execution.
+2. Wait for human input.
+3. Resume with the same context and variables.
+
+The Tool: place_shipping_order()
+Logic Flow
+1. Small order → auto-approved.
+2. Large order (first call) → requests confirmation and pauses.
+3. Large order (resume) → reads approval decision and finishes.
+
+The Agent + Resumable App
+
+Agents are stateless; they forget context between runs.
+To resume after a pause, you wrap the agent in an App with ResumabilityConfig.
+
+```
+from google.adk.apps.app import App, ResumabilityConfig
+from google.adk.sessions import InMemorySessionService
+from google.adk.runners import Runner
+
+shipping_agent = LlmAgent(
+    name="shipping_agent",
+    model=Gemini(model="gemini-2.5-flash-lite", retry_options=retry_config),
+    instruction="Use the place_shipping_order tool...",
+    tools=[FunctionTool(func=place_shipping_order)],
+)
+
+shipping_app = App(
+    name="shipping_coordinator",
+    root_agent=shipping_agent,
+    resumability_config=ResumabilityConfig(is_resumable=True),
+)
+
+shipping_runner = Runner(app=shipping_app, session_service=InMemorySessionService())
+```
+Workflow Function – Pause & Resume
+
+```
+async def run_shipping_workflow(query: str, auto_approve: bool = True):
+    session_id = f"order_{uuid.uuid4().hex[:8]}"
+
+    # Initial run: may trigger approval request
+    async for event in shipping_runner.run_async(user_id="test_user", session_id=session_id,
+                                                 new_message=types.Content(role="user", parts=[types.Part(text=query)])):
+        events.append(event)
+
+    approval_info = check_for_approval(events)
+
+    if approval_info:
+        # Pause detected → simulate human decision
+        async for event in shipping_runner.run_async(
+            user_id="test_user",
+            session_id=session_id,
+            new_message=create_approval_response(approval_info, auto_approve),
+            invocation_id=approval_info["invocation_id"],   # critical: resume same run
+        ):
+            print_agent_response([event])
+    else:
+        print_agent_response(events)
+```
+
+#### Execution Flow Summary
+| Step | What Happens                                | Key Concept                                |
+| ---- | ------------------------------------------- | ------------------------------------------ |
+| 1    | User: “Ship 10 containers to Rotterdam”     | Start session                              |
+| 2    | Agent calls `place_shipping_order()`        | Tool logic                                 |
+| 3    | Tool requests confirmation                  | ADK emits `adk_request_confirmation` event |
+| 4    | Workflow detects pause                      | Saves `invocation_id`                      |
+| 5    | Human approves/rejects                      | Creates `FunctionResponse`                 |
+| 6    | Workflow resumes same run (`invocation_id`) | ADK restores state                         |
+| 7    | Tool finishes and returns final message     | Conversation continues seamlessly          |
+
+#### 💡 Key ADK Concepts Used
+
+| Concept                            | Description                                                 |
+| ---------------------------------- | ----------------------------------------------------------- |
+| **ToolContext**                    | Lets a tool ask for confirmation or check approval.         |
+| **adk_request_confirmation event** | System-generated event signaling “pause here for approval.” |
+| **invocation_id**                  | Unique ID linking initial call to resumed execution.        |
+| **App + ResumabilityConfig**       | Persists agent state across pauses.                         |
+
+### 4. Putting It Together – Demo Flows
+| Scenario                         | Behavior                                                |
+| -------------------------------- | ------------------------------------------------------- |
+| **Ship 3 containers**            | Auto-approved immediately (`≤ 5`).                      |
+| **Ship 10 containers → approve** | Pauses → simulated human approval → resumes → approved. |
+| **Ship 8 containers → reject**   | Pauses → simulated rejection → resumes → rejected.      |
+
+Demonstrates complete pause-resume lifecycle.
+
+#### 📦 Shipping Agent – Pause & Resume Flow
+
+```
+User: "Ship 10 containers to Rotterdam"
+        │
+        ▼
+[Shipping Agent]
+  │
+  ├─> Calls place_shipping_order()
+  │     ├─ If ≤5 containers → auto-approve ✅
+  │     └─ If >5 containers → request_confirmation()
+  │
+  ▼
+ADK sends "adk_request_confirmation" event (agent paused ⏸️)
+  │
+  ├─ Human approves ✅ or rejects ❌
+  │
+  ▼
+Workflow resumes same invocation_id
+  │
+  ├─ Tool reads confirmation → returns approved/rejected
+  │
+  ▼
+Agent sends final message to user
+```
+
+### 5. Key Takeaways
+
+| Pattern                     | When to Use                                                           | Core Components                                                    |
+| --------------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **MCP Integration**         | Connect agents to external tools via standard protocol (no API code). | `McpToolset`, `StdioConnectionParams`                              |
+| **Long-Running Operations** | Add human-in-the-loop or time-delayed steps.                          | `ToolContext`, `request_confirmation`, `App`, `ResumabilityConfig` |
+
+#### Conceptual Links to Earlier Notebooks
+| From                               | To               | Evolution                                                           |
+| ---------------------------------- | ---------------- | ------------------------------------------------------------------- |
+| **Day 2A (Custom Tools)**          | **Day 2B (MCP)** | From writing your own Python tools → to connecting community tools. |
+| **Day 2A (Agent Tool Delegation)** | **Day 2B (LRO)** | From agent delegation → to time-based pause and resume.             |
+
+💬 My Insights
+
+This notebook showed me how enterprise-grade agents handle real-world workflows:
+– MCP makes integration plug-and-play.
+– Long-Running Operations give agents patience and accountability.
+– Together, they transform static chatbots into reliable autonomous systems.*
+
+TL;DR Summary
+- MCP connects your agent to the world.
+- LRO lets it think in human time.
+- Combined with ADK App resumability, they make agents safe, compliant, and stateful.

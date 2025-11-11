@@ -172,6 +172,7 @@ It standardizes how models “talk” to tools — just like HTTP standardized h
 
 ### Key mindset shift:
 Instead of hard-coding integrations, we now design ecosystems where agents can discover, reason, and act across interoperable systems.
+
 ----
 
 ## Building and Using Agent Tools
@@ -232,7 +233,7 @@ flowchart TD
     class C,D tool
     class F system
     class G output
-```
+
 
 #### Diagram Explanation
 | Component                          | Role                                                                                     |
